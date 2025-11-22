@@ -78,6 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const highlightingContent = document.getElementById('highlighting-content');
     const lineNumbers = document.getElementById('line-numbers');
     const runButton = document.getElementById('run-button');
+    const saveButton = document.getElementById('save-button');
+    const clearButton = document.getElementById('clear-button');
     const exampleSelector = document.getElementById('example-selector');
     const themeToggle = document.getElementById('theme-toggle');
 
@@ -391,6 +393,30 @@ document.addEventListener('DOMContentLoaded', () => {
             printToTerminal(`\nParsing Error: ${error.message}`, 'error');
             highlightErrorLine(error.message);
             console.error(error);
+        }
+    });
+
+    // -----------------------------------
+    // CONTROLS (Save & Clear)
+    // -----------------------------------
+    saveButton.addEventListener('click', () => {
+        const code = codeEditor.value;
+        const blob = new Blob([code], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pseudocode.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    clearButton.addEventListener('click', () => {
+        if (confirm('Είστε σίγουροι ότι θέλετε να καθαρίσετε τον κώδικα;')) {
+            codeEditor.value = '';
+            onInput(); // Update highlighting and line numbers
+            exampleSelector.value = ""; // Reset selector
         }
     });
 
