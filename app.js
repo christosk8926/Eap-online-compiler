@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalInputLine = document.getElementById('terminal-input-line');
     const terminalInput = document.getElementById('terminal-input');
     const terminalPrompt = document.getElementById('terminal-prompt');
+    const outputContainer = document.querySelector('.output-container');
 
     // -----------------------------------
     // SYNTAX HIGHLIGHTING
@@ -329,12 +330,29 @@ document.addEventListener('DOMContentLoaded', () => {
         line.className = `term-${type}`;
         terminalOutput.appendChild(line);
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+        // Auto-grow output container if content is large (only on desktop)
+        if (window.innerWidth > 800 && terminalOutput.children.length > 5) {
+             outputContainer.classList.add('expanded');
+        }
     };
 
     const clearTerminal = () => {
         terminalOutput.innerHTML = '';
         terminalInputLine.style.display = 'none';
+        outputContainer.classList.remove('expanded');
     };
+
+    // Allow toggle by clicking header
+    const outputHeader = outputContainer.querySelector('.panel-header');
+    if(outputHeader) {
+        outputHeader.addEventListener('click', () => {
+            if (window.innerWidth > 800) {
+                outputContainer.classList.toggle('expanded');
+            }
+        });
+        outputHeader.title = "Click to expand/collapse";
+    }
 
     // Async Input Provider
     const inputProvider = (promptMsg) => {
