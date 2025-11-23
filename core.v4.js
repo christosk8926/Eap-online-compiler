@@ -116,12 +116,38 @@ class Parser {
     peek() { return this.tokens[this.current]; }
     previous() { return this.tokens[this.current - 1]; }
     advance() { if (!this.isAtEnd()) this.current++; return this.previous(); }
-    consume(type, message) { if (this.check(type)) return this.advance(); const token = this.peek(); throw new Error(message || `Expected token of type ${type} but got ${token.type} ('${token.value}') at line ${token.line}, column ${token.column}`); }
+
+    // Helper to throw error with location info
+    error(message, token) {
+        token = token || this.peek();
+        const locationInfo = `[Line: ${token.line}, Col: ${token.column}]`;
+        throw new Error(message ? `${message} ${locationInfo}` : `Error ${locationInfo}`);
+    }
+
+    consume(type, message) {
+        if (this.check(type)) return this.advance();
+        const token = this.peek();
+        const locationInfo = `[Line: ${token.line}, Col: ${token.column}]`;
+        // Standardize consume error message
+        throw new Error(message ? `${message} ${locationInfo}` : `Expected token of type ${type} but got ${token.type} ('${token.value}') ${locationInfo}`);
+    }
+
     check(type) { if (this.isAtEnd()) return false; return this.peek().type === type; }
     match(...types) { for (const type of types) { if (this.check(type)) { this.advance(); return true; } } return false; }
     parse() { return this.parseProgram(); }
 
+    // Helper to attach location to AST node
+    attachLoc(node) {
+        // We can attach start location.
+        // A better approach is to wrap parsing methods, but manual attachment is safer for now.
+        // We can use this.peek() before parsing for start, and this.previous() after for end.
+        // For simplicity, let's just store the start line/col of the primary token.
+        // Actually, we should call this inside the parse methods.
+        return node;
+    }
+
     parseProgram() {
+        const startToken = this.peek();
         this.consume(TokenType.ALGORITHM, "A program must start with 'ΑΛΓΟΡΙΘΜΟΣ'.");
         const name = this.consume(TokenType.IDENTIFIER, "Expected algorithm name.").value;
         const declarations = this.parseDeclarations();
@@ -137,10 +163,11 @@ class Parser {
         this.consume(TokenType.BEGIN, "Expected 'ΑΡΧΗ' for the main program body.");
         const body = this.parseBlock();
         this.consume(TokenType.END, "A program must end with 'ΤΕΛΟΣ'.");
-        return { type: 'Program', name, declarations, body };
+        return { type: 'Program', name, declarations, body, loc: { line: startToken.line, column: startToken.column } };
     }
 
     parseProcedureDeclaration() {
+        const startToken = this.peek();
         const name = this.consume(TokenType.IDENTIFIER, "Expected procedure name.").value;
         const params = [];
         if (this.match(TokenType.LEFT_PAREN)) {
@@ -160,10 +187,11 @@ class Parser {
         this.consume(TokenType.BEGIN, `Expected 'ΑΡΧΗ' for procedure '${name}'.`);
         const body = this.parseBlock();
         this.consume(TokenType.END_PROCEDURE, `Expected 'ΤΕΛΟΣ-ΔΙΑΔΙΚΑΣΙΑΣ' for procedure '${name}'.`);
-        return { type: 'ProcedureDeclaration', name, params, declarations: localDeclarations, body };
+        return { type: 'ProcedureDeclaration', name, params, declarations: localDeclarations, body, loc: { line: startToken.line, column: startToken.column } };
     }
 
     parseFunctionDeclaration() {
+        const startToken = this.peek();
         const name = this.consume(TokenType.IDENTIFIER, "Expected function name.").value;
         const params = [];
          if (this.match(TokenType.LEFT_PAREN)) {
@@ -185,7 +213,7 @@ class Parser {
         this.consume(TokenType.BEGIN, `Expected 'ΑΡΧΗ' for function '${name}'.`);
         const body = this.parseBlock();
         this.consume(TokenType.END_FUNCTION, `Expected 'ΤΕΛΟΣ-ΣΥΝΑΡΤΗΣΗΣ' for function '${name}'.`);
-        return { type: 'FunctionDeclaration', name, params, returnType, declarations: localDeclarations, body };
+        return { type: 'FunctionDeclaration', name, params, returnType, declarations: localDeclarations, body, loc: { line: startToken.line, column: startToken.column } };
     }
 
     parseInterfaceBlock() {
@@ -228,7 +256,7 @@ class Parser {
             const ofType = this.parseType();
             return { type: 'ArrayType', dimensions, ofType };
         }
-        throw new Error(`Unexpected token '${this.peek().value}' while parsing a type.`);
+        this.error(`Unexpected token '${this.peek().value}' while parsing a type.`);
     }
 
     parseBlock() {
@@ -247,25 +275,34 @@ class Parser {
     }
 
     parseStatement() {
-        if (this.match(TokenType.CALCULATE)) { return this.parseProcedureCall(); }
-        if (this.match(TokenType.PRINT)) { return this.parsePrintStatement(); }
-        if (this.match(TokenType.IF)) { return this.parseIfStatement(); }
-        if (this.match(TokenType.FOR)) { return this.parseForStatement(); }
-        if (this.match(TokenType.WHILE)) { return this.parseWhileStatement(); }
-        if (this.match(TokenType.REPEAT)) { return this.parseRepeatUntilStatement(); }
-        if (this.match(TokenType.READ)) { return this.parseReadStatement(); }
+        const startToken = this.peek();
+        let stmt = null;
 
-        if (this.check(TokenType.IDENTIFIER)) {
+        if (this.match(TokenType.CALCULATE)) { stmt = this.parseProcedureCall(); }
+        else if (this.match(TokenType.PRINT)) { stmt = this.parsePrintStatement(); }
+        else if (this.match(TokenType.IF)) { stmt = this.parseIfStatement(); }
+        else if (this.match(TokenType.FOR)) { stmt = this.parseForStatement(); }
+        else if (this.match(TokenType.WHILE)) { stmt = this.parseWhileStatement(); }
+        else if (this.match(TokenType.REPEAT)) { stmt = this.parseRepeatUntilStatement(); }
+        else if (this.match(TokenType.READ)) { stmt = this.parseReadStatement(); }
+
+        else if (this.check(TokenType.IDENTIFIER)) {
             const nextToken = this.tokens[this.current + 1];
             if (nextToken && (nextToken.type === TokenType.ASSIGN || nextToken.type === TokenType.LEFT_BRACKET)) {
-                return this.parseAssignmentStatement();
+                stmt = this.parseAssignmentStatement();
             }
-            if (nextToken && nextToken.type === TokenType.LEFT_PAREN) {
-                return this.parseProcedureCall();
+            else if (nextToken && nextToken.type === TokenType.LEFT_PAREN) {
+                stmt = this.parseProcedureCall();
             }
         }
+
+        if (stmt) {
+            stmt.loc = { line: startToken.line, column: startToken.column };
+            return stmt;
+        }
+
         const token = this.peek();
-        throw new Error(`Unexpected statement starting with '${token.value}' at line ${token.line}`);
+        this.error(`Unexpected statement starting with '${token.value}'`, token);
     }
 
     parseProcedureCall() { const name = this.consume(TokenType.IDENTIFIER, "Expected procedure name.").value; this.consume(TokenType.LEFT_PAREN, "Expected '(' after procedure name."); const args = []; if (!this.check(TokenType.RIGHT_PAREN)) { do { if(this.match(TokenType.PERCENT)) { args.push({value: this.parseExpression(), passBy: 'reference'}); } else { args.push({value: this.parseExpression(), passBy: 'value'}); } } while (this.match(TokenType.COMMA)); } this.consume(TokenType.RIGHT_PAREN, "Expected ')' after procedure arguments."); this.match(TokenType.SEMICOLON); return { type: 'ProcedureCall', name, args }; }
@@ -324,28 +361,38 @@ class Parser {
     }
 
     parsePrimary() {
+        const startToken = this.peek();
+        let expr = null;
+
         if (this.match(TokenType.NUMBER, TokenType.STRING)) {
-            return { type: 'Literal', value: this.previous().value };
+            expr = { type: 'Literal', value: this.previous().value };
         }
-        if (this.match(TokenType.IDENTIFIER)) {
+        else if (this.match(TokenType.IDENTIFIER)) {
             const name = this.previous().value;
-            if (name.toUpperCase() === 'TRUE') return { type: 'Literal', value: true };
-            if (name.toUpperCase() === 'FALSE') return { type: 'Literal', value: false };
-            if (this.check(TokenType.LEFT_PAREN)) {
-                return this.parseFunctionCall(name); }
-            if (this.check(TokenType.LEFT_BRACKET)) {
+            if (name.toUpperCase() === 'TRUE') expr = { type: 'Literal', value: true };
+            else if (name.toUpperCase() === 'FALSE') expr = { type: 'Literal', value: false };
+            else if (this.check(TokenType.LEFT_PAREN)) {
+                expr = this.parseFunctionCall(name); }
+            else if (this.check(TokenType.LEFT_BRACKET)) {
                 this.consume(TokenType.LEFT_BRACKET);
                 const indices = [];
                 do { indices.push(this.parseExpression()); } while(this.match(TokenType.COMMA));
                 this.consume(TokenType.RIGHT_BRACKET, "Expected ']' after array indices.");
-                return { type: 'ArrayAccess', name, indices };
+                expr = { type: 'ArrayAccess', name, indices };
             }
-            return { type: 'Identifier', name };
+            else expr = { type: 'Identifier', name };
         }
-        if (this.match(TokenType.EOLN)) { return { type: 'Identifier', name: 'EOLN' }; }
-        if (this.match(TokenType.LEFT_PAREN)) { const expr = this.parseExpression(); this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression."); return { type: 'Grouping', expression: expr }; }
+        else if (this.match(TokenType.EOLN)) { expr = { type: 'Identifier', name: 'EOLN' }; }
+        else if (this.match(TokenType.LEFT_PAREN)) { const exprBody = this.parseExpression(); this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression."); expr = { type: 'Grouping', expression: exprBody }; }
+
+        if (expr) {
+            // Note: This location might be slightly off for grouping etc, but better than nothing
+            if (!expr.loc) expr.loc = { line: startToken.line, column: startToken.column };
+            return expr;
+        }
+
         const token = this.peek();
-        throw new Error(`Unexpected token '${token.value}' when parsing primary expression at line ${token.line}`);
+        this.error(`Unexpected token '${token.value}' when parsing primary expression`, token);
     }
 
     parseFunctionCall(name) { this.consume(TokenType.LEFT_PAREN, "Expected '(' for function call.");
@@ -452,6 +499,7 @@ class Interpreter {
         this.outputBuffer = [];
         this.inputProvider = null;
         this.outputCallback = null;
+        this.currentNode = null; // Track execution for error reporting
     }
 
     // Allow setting a custom input provider for testing or non-browser environments
@@ -478,7 +526,13 @@ class Interpreter {
 
             return { output: this.outputBuffer.join('\n'), error: null };
         } catch (e) {
-            return { output: this.outputBuffer.join('\n'), error: e.message };
+            // Add location info if available and not present
+            let msg = e.message;
+            // Check for new format [Line: ...]
+            if (this.currentNode && this.currentNode.loc && !msg.includes('[Line:')) {
+                msg = `${msg} [Line: ${this.currentNode.loc.line}, Col: ${this.currentNode.loc.column}]`;
+            }
+            return { output: this.outputBuffer.join('\n'), error: msg };
         }
     }
 
@@ -512,6 +566,7 @@ class Interpreter {
     }
 
     async execute(stmt, env) {
+        this.currentNode = stmt; // Set current node for error tracking
         switch (stmt.type) {
             case 'AssignmentStatement': {
                 const val = await this.evaluate(stmt.value, env);

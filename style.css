@@ -99,8 +99,31 @@ h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2p
 main { flex: 1; display: flex; flex-direction: column; padding: 1rem; gap: 0.5rem; overflow: hidden; }
 .container { display: flex; flex-direction: column; flex: 1; gap: 0.5rem; min-height: 0; overflow: hidden; }
 .editor-container { flex: 1; display: flex; flex-direction: column; background-color: var(--panel-bg); border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5); overflow: hidden; transition: background-color 0.3s; border: 1px solid var(--panel-header-border); min-height: 200px; }
-.output-container { height: 25vh; flex: none; display: flex; flex-direction: column; background-color: var(--panel-bg); border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5); overflow: hidden; transition: height 0.3s ease-out, background-color 0.3s; border: 1px solid var(--panel-header-border); min-height: 150px; }
-.output-container.expanded { height: 50vh; }
+.output-container { height: 25vh; flex: none; display: flex; flex-direction: column; background-color: var(--panel-bg); border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5); overflow: hidden; transition: background-color 0.3s; border: 1px solid var(--panel-header-border); min-height: 150px; max-height: 80vh; }
+/* Removed .expanded class as resizing is now manual/persistent */
+
+.resizer {
+    height: 10px;
+    background: transparent;
+    cursor: row-resize;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    transition: background 0.2s;
+}
+.resizer::after {
+    content: "";
+    width: 40px;
+    height: 4px;
+    background-color: var(--panel-header-border);
+    border-radius: 2px;
+    opacity: 0.5;
+}
+.resizer:hover::after {
+    opacity: 1;
+    background-color: var(--button-bg);
+}
 .panel-header { padding: 0.5rem 1rem; background-color: var(--panel-header-bg); border-bottom: 1px solid var(--panel-header-border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; color: var(--text-color); cursor: pointer; user-select: none; }
 #example-selector { padding: 0.25rem 0.5rem; border-radius: 0; border: 1px solid var(--text-color); font-size: 0.85rem; background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-mono); cursor: pointer;}
 .editor-wrapper { display: flex; flex: 1; position: relative; overflow: hidden; }

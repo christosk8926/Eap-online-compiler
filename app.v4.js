@@ -89,6 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalInput = document.getElementById('terminal-input');
     const terminalPrompt = document.getElementById('terminal-prompt');
     const outputContainer = document.querySelector('.output-container');
+    const dragHandle = document.getElementById('drag-handle');
+
+    // -----------------------------------
+    // SETTINGS MANAGER
+    // -----------------------------------
+    const SettingsManager = {
+        get: (key, defaultValue) => {
+            const val = localStorage.getItem(key);
+            return val !== null ? val : defaultValue;
+        },
+        set: (key, value) => {
+            localStorage.setItem(key, value);
+        }
+    };
 
     // -----------------------------------
     // SYNTAX HIGHLIGHTING
@@ -314,7 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const highlightErrorLine = (errorMsg) => {
-        const match = errorMsg.match(/line (\d+)/);
+        // Updated regex to support both "line X" (old) and "Line: X" (new)
+        const match = errorMsg.match(/Line:? (\d+)/i) || errorMsg.match(/line (\d+)/);
         if (match) {
             const line = parseInt(match[1]);
             const lineElement = lineNumbers.children[line - 1];
@@ -329,36 +344,33 @@ document.addEventListener('DOMContentLoaded', () => {
         line.textContent = text;
         line.className = `term-${type}`;
         terminalOutput.appendChild(line);
-        terminalOutput.scrollTop = terminalOutput.scrollHeight;
 
-        // Auto-grow output container if content is large (only on desktop)
-        if (window.innerWidth > 800 && terminalOutput.children.length > 5) {
-             outputContainer.classList.add('expanded');
+        // Scroll the window container, not the output div
+        scrollToBottom();
+    };
+
+    const scrollToBottom = () => {
+        const terminalWindow = document.getElementById('terminal-window');
+        if (terminalWindow) {
+            // Use setTimeout to ensure DOM update is complete before scrolling
+            setTimeout(() => {
+                terminalWindow.scrollTop = terminalWindow.scrollHeight;
+            }, 0);
         }
     };
 
     const clearTerminal = () => {
         terminalOutput.innerHTML = '';
         terminalInputLine.style.display = 'none';
-        outputContainer.classList.remove('expanded');
     };
-
-    // Allow toggle by clicking header
-    const outputHeader = outputContainer.querySelector('.panel-header');
-    if(outputHeader) {
-        outputHeader.addEventListener('click', () => {
-            if (window.innerWidth > 800) {
-                outputContainer.classList.toggle('expanded');
-            }
-        });
-        outputHeader.title = "Click to expand/collapse";
-    }
 
     // Async Input Provider
     const inputProvider = (promptMsg) => {
         return new Promise((resolve) => {
             printToTerminal(promptMsg, 'info');
             terminalInputLine.style.display = 'flex';
+            // Scroll again because displaying the input line changes scrollHeight
+            scrollToBottom();
             terminalInput.value = '';
             terminalInput.focus();
 
@@ -401,14 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await interpreter.interpret(ast);
 
             if (result.error) {
-                 printToTerminal(`\nRuntime Error: ${result.error}`, 'error');
+                 printToTerminal(`\nExecution Error: ${result.error}`, 'error');
                  highlightErrorLine(result.error);
             } else {
                  printToTerminal('\nExecution finished.', 'success');
             }
 
         } catch (error) {
-            printToTerminal(`\nParsing Error: ${error.message}`, 'error');
+            printToTerminal(`\nCompilation Error: ${error.message}`, 'error');
             highlightErrorLine(error.message);
             console.error(error);
         }
@@ -441,10 +453,68 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     // DARK MODE
     // -----------------------------------
-    let isDarkMode = false;
+    const applyTheme = (isDark) => {
+        document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        SettingsManager.set('theme', isDark ? 'dark' : 'light');
+    };
+
+    let isDarkMode = SettingsManager.get('theme', 'light') === 'dark';
+    applyTheme(isDarkMode);
+
     themeToggle.addEventListener('click', () => {
         isDarkMode = !isDarkMode;
-        document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-        themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+        applyTheme(isDarkMode);
+    });
+
+    // -----------------------------------
+    // TERMINAL RESIZING
+    // -----------------------------------
+    // Load saved height
+    const savedHeight = SettingsManager.get('terminalHeight', '25vh');
+    if (savedHeight) {
+        outputContainer.style.height = savedHeight;
+    }
+
+    let isResizing = false;
+
+    dragHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none'; // Prevent text selection while dragging
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        // Calculate new height from bottom
+        // container is flex column. outputContainer is at bottom.
+        // Height = window height - mouse Y - footer height (approx) - header height?
+        // Easier: Height = window.innerHeight - e.clientY - footerOffset
+
+        // Or better: calculate based on container bounds.
+        // The .container fills the main area.
+        // e.clientY is relative to viewport.
+        // We want the distance from the bottom of the .container to e.clientY.
+
+        const containerRect = document.querySelector('.container').getBoundingClientRect();
+        const newHeight = containerRect.bottom - e.clientY;
+
+        // Min height 100px, Max height 80% of container
+        const maxHeight = containerRect.height * 0.8;
+
+        if (newHeight > 100 && newHeight < maxHeight) {
+            outputContainer.style.height = `${newHeight}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            // Save height
+            SettingsManager.set('terminalHeight', outputContainer.style.height);
+        }
     });
 });
