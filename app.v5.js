@@ -468,39 +468,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -----------------------------------
-    // TERMINAL RESIZING
+    // TERMINAL RESIZING & FOCUS LOGIC
     // -----------------------------------
-    // Load saved height
-    const savedHeight = SettingsManager.get('terminalHeight', '25vh');
-    if (savedHeight) {
-        outputContainer.style.height = savedHeight;
-    }
+    const MIN_TERMINAL_HEIGHT = '150px';
+    const DEFAULT_EXPANDED_HEIGHT = '40vh';
 
+    // Get saved expanded height or default
+    let preferredHeight = SettingsManager.get('terminalExpandedHeight', DEFAULT_EXPANDED_HEIGHT);
+
+    const expandTerminal = () => {
+        outputContainer.style.height = preferredHeight;
+    };
+
+    const collapseTerminal = () => {
+        outputContainer.style.height = MIN_TERMINAL_HEIGHT;
+    };
+
+    // Initial State: Collapsed or Expanded?
+    // Maybe start expanded if it was saved?
+    // For now, let's start with preferred height if it exists, else default.
+    outputContainer.style.height = preferredHeight;
+
+    // Events for dynamic resizing
+    codeEditor.addEventListener('focus', collapseTerminal);
+    document.querySelector('.editor-container').addEventListener('click', collapseTerminal);
+
+    outputContainer.addEventListener('click', expandTerminal);
+    terminalInput.addEventListener('focus', expandTerminal);
+
+    // Run button expands terminal to show output
+    runButton.addEventListener('click', expandTerminal);
+
+
+    // Resizing Logic
     let isResizing = false;
 
     dragHandle.addEventListener('mousedown', (e) => {
         isResizing = true;
         document.body.style.cursor = 'row-resize';
-        document.body.style.userSelect = 'none'; // Prevent text selection while dragging
+        document.body.style.userSelect = 'none';
     });
 
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
 
-        // Calculate new height from bottom
-        // container is flex column. outputContainer is at bottom.
-        // Height = window height - mouse Y - footer height (approx) - header height?
-        // Easier: Height = window.innerHeight - e.clientY - footerOffset
-
-        // Or better: calculate based on container bounds.
-        // The .container fills the main area.
-        // e.clientY is relative to viewport.
-        // We want the distance from the bottom of the .container to e.clientY.
-
         const containerRect = document.querySelector('.container').getBoundingClientRect();
         const newHeight = containerRect.bottom - e.clientY;
-
-        // Min height 100px, Max height 80% of container
         const maxHeight = containerRect.height * 0.8;
 
         if (newHeight > 100 && newHeight < maxHeight) {
@@ -513,8 +526,10 @@ document.addEventListener('DOMContentLoaded', () => {
             isResizing = false;
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
-            // Save height
-            SettingsManager.set('terminalHeight', outputContainer.style.height);
+
+            // When user manually resizes, that becomes the new "Preferred" height
+            preferredHeight = outputContainer.style.height;
+            SettingsManager.set('terminalExpandedHeight', preferredHeight);
         }
     });
 });
