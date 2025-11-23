@@ -1,4 +1,4 @@
-const { tokenize, Parser, Interpreter } = require('./core.js');
+const { tokenize, Parser, Interpreter } = require('./core.v2.js');
 
 async function testParsingError() {
     console.log("--- Testing Parsing Error ---");

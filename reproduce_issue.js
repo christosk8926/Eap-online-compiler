@@ -1,4 +1,4 @@
-const { tokenize, Parser } = require('./core.js');
+const { tokenize, Parser } = require('./core.v2.js');
 
 const code = `ΑΛΓΟΡΙΘΜΟΣ Test
 ΑΡΧΗ
