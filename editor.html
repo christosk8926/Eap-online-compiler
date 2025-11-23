@@ -11,16 +11,24 @@
         (function() {
             let savedTheme = 'light';
             try {
-                // Check URL params first (fallback for file:// or cross-origin issues)
                 const params = new URLSearchParams(window.location.search);
                 const urlTheme = params.get('theme');
+                const localTheme = localStorage.getItem('theme');
 
-                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light')) {
+                // Check if navigation is Back/Forward
+                let isBackForward = false;
+                if (window.performance && window.performance.getEntriesByType) {
+                    const nav = window.performance.getEntriesByType('navigation');
+                    if (nav.length > 0 && nav[0].type === 'back_forward') {
+                        isBackForward = true;
+                    }
+                }
+
+                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light') && !isBackForward) {
                     savedTheme = urlTheme;
-                    // Persist it if possible
                     localStorage.setItem('theme', savedTheme);
                 } else {
-                    savedTheme = localStorage.getItem('theme') || 'light';
+                    savedTheme = localTheme || 'light';
                 }
             } catch (e) {
                 console.warn('Theme access error:', e);
@@ -28,6 +36,14 @@
 
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
+
+        // Handle BFCache
+        window.addEventListener('pageshow', (event) => {
+             if (event.persisted) {
+                 const theme = localStorage.getItem('theme') || 'light';
+                 document.documentElement.setAttribute('data-theme', theme);
+             }
+        });
     </script>
 </head>
 <body>

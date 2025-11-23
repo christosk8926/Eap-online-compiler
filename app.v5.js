@@ -123,44 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
 
         try {
-            // Use core.js tokenize function but strictly for highlighting (lenient mode if possible?)
-            // Our tokenizer throws errors on unknown chars. We should catch them and treat as plain text.
-            // But tokenize returns an array. We need to reconstruct the string with tags.
-            // Actually, rebuilding from tokens might lose whitespace if not careful.
-            // The tokenizer skips whitespace! This is bad for highlighting which needs to preserve exact layout.
-            // We need a Lexer that preserves whitespace or just a regex-based highlighter for visual only.
-
-            // Since `tokenize` skips whitespace, we can't use it directly for full reconstruction easily
-            // without modifying it to return whitespace tokens.
-            // Let's implement a simple regex-based highlighter here for the UI layer.
-
-            // Simple Tokenizer for Highlighting
-            const tokenPatterns = [
-                { type: 'token-comment', regex: /\/\*[\s\S]*?\*\/|\/\/.*/g },
-                { type: 'token-string', regex: /"[^"]*"/g },
-                { type: 'token-number', regex: /\b\d+(\.\d+)?\b/g },
-                // Use unicode flag 'u' to make \b work correctly with Greek characters if supported, or avoid \b for Greek.
-                // In many browsers \b does not work well with non-ASCII.
-                // Let's remove \b for Greek keywords or use a better boundary check.
-                // Or just match the words.
-                { type: 'token-keyword', regex: /(?:^|[^a-zA-Z\d\u0370-\u03ff_])(ΑΛΓΟΡΙΘΜΟΣ|ΣΤΑΘΕΡΕΣ|ΔΕΔΟΜΕΝΑ|ΑΡΧΗ|ΤΕΛΟΣ|ΕΑΝ|ΤΟΤΕ|ΑΛΛΙΩΣ|ΕΑΝ-ΤΕΛΟΣ|ΓΙΑ|ΕΩΣ|ΜΕ|ΒΗΜΑ|ΕΠΑΝΑΛΑΒΕ|ΓΙΑ-ΤΕΛΟΣ|ΕΝΟΣΩ|ΕΝΟΣΩ-ΤΕΛΟΣ|ΜΕΧΡΙ|ΤΥΠΩΣΕ|ΔΙΑΒΑΣΕ|ΥΠΟΛΟΓΙΣΕ|ΔΙΑΔΙΚΑΣΙΑ|ΤΕΛΟΣ-ΔΙΑΔΙΚΑΣΙΑΣ|ΣΥΝΑΡΤΗΣΗ|ΤΕΛΟΣ-ΣΥΝΑΡΤΗΣΗΣ|ΕΠΙΣΤΡΕΨΕ|ΑΚΕΡΑΙΟΣ|ΠΡΑΓΜΑΤΙΚΟΣ|ΛΟΓΙΚΟΣ|ΧΑΡΑΚΤΗΡΑΣ|ΣΥΜΒΟΛΟΣΕΙΡΑ|ALGORITHM|CONSTANTS|DATA|BEGIN|END|IF|THEN|ELSE|END_IF|FOR|TO|STEP|REPEAT|END_FOR|WHILE|END_WHILE|UNTIL|PRINT|READ|CALCULATE|PROCEDURE|END_PROCEDURE|FUNCTION|END_FUNCTION|RETURN|INTEGER|REAL|BOOLEAN|CHAR|STRING)(?=[^a-zA-Z\d\u0370-\u03ff_]|$)/gi },
-                { type: 'token-operator', regex: /:=|\+|-|\*|\/|<>|<=|>=|<|>|=|:|;|,|\.|\[|\]|\(|\)/g }
-            ];
-
-            let lastIndex = 0;
-            // We need to match tokens and preserve everything else.
-            // A simple way is to split by regex capturing groups, but JS regex `exec` is safer for iteration.
-
-            // Combine patterns? Order matters. Comments/Strings first.
-            // We can't easily combine properly without a loop.
-            // Let's use a simplified approach: iterate through text and match longest token.
-
-            // Or simpler: replace strict tokens with spans. But replacing inside string is tricky.
-            // Let's just wrap valid tokens.
-
-            // For now, let's treat the text as a sequence of potential tokens.
-            // We will scan character by character or try to match at current position.
-
+            // Regex-based highlighter for visual only.
             let i = 0;
             while (i < text.length) {
                 let match = null;
@@ -168,57 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 let matchLength = 0;
                 let matchText = '';
 
-                // Try patterns
-                for (const p of tokenPatterns) {
-                    p.regex.lastIndex = i;
-                    // For the custom regex we used (?:^|...) it might match a prefix char.
-                    // But we want to start exactly at i, or handle the prefix.
-                    // Our complex regex (?:^|[^...])(KEYWORD) matches the prefix too if it's there.
-                    // But since we iterate char by char, we usually are at a boundary or not.
-                    // If we are at the start of the word, the previous char was already consumed.
-                    // So we are at `^` effectively relative to "rest of string"? No.
-                    // Sticky flag 'y' is what we want, but complex support varies.
-
-                    // Simpler approach: Check substring?
-
-                    // Let's rely on exec finding it at i.
-                    // If our regex has a lookbehind-like prefix `(?:^|[^...])`, it will match the previous char if we are not at 0.
-                    // But we have already processed the previous char.
-                    // So this regex approach is tricky for sequential processing.
-
-                    // Revised approach: simplified regexes without complex boundaries, assuming we tokenize properly.
-                    // But `\b` failed for Greek.
-                    // Let's use `match` and check logic manually?
-
-                    // Or, since we want to be safe:
-                    // Just match from current position.
-
-                    // If we use specific keywords, we can check if `text.substr(i)` starts with them AND is followed by boundary.
-                }
-
-                // Actually, let's fix the logic. The regex `(?:^|[^...])` matches a character BEFORE the keyword.
-                // If we are at `i`, that character is at `i-1`.
-                // But we are processing `i`.
-                // So we should only look for the keyword starting at `i`.
-                // And check the boundary at `i-1` manually.
-
                 const isBoundary = (idx) => {
                      if (idx < 0 || idx >= text.length) return true;
                      const c = text[idx];
                      return /[^a-zA-Z\d\u0370-\u03ff_]/.test(c);
                 };
 
-                // Pattern without boundaries, check boundaries manually
                 const keywords = ["ΑΛΓΟΡΙΘΜΟΣ","ΣΤΑΘΕΡΕΣ","ΔΕΔΟΜΕΝΑ","ΑΡΧΗ","ΤΕΛΟΣ","ΕΑΝ","ΤΟΤΕ","ΑΛΛΙΩΣ","ΕΑΝ-ΤΕΛΟΣ","ΓΙΑ","ΕΩΣ","ΜΕ","ΒΗΜΑ","ΕΠΑΝΑΛΑΒΕ","ΓΙΑ-ΤΕΛΟΣ","ΕΝΟΣΩ","ΕΝΟΣΩ-ΤΕΛΟΣ","ΜΕΧΡΙ","ΤΥΠΩΣΕ","ΔΙΑΒΑΣΕ","ΥΠΟΛΟΓΙΣΕ","ΔΙΑΔΙΚΑΣΙΑ","ΤΕΛΟΣ-ΔΙΑΔΙΚΑΣΙΑΣ","ΣΥΝΑΡΤΗΣΗ","ΤΕΛΟΣ-ΣΥΝΑΡΤΗΣΗΣ","ΕΠΙΣΤΡΕΨΕ","ΑΚΕΡΑΙΟΣ","ΠΡΑΓΜΑΤΙΚΟΣ","ΛΟΓΙΚΟΣ","ΧΑΡΑΚΤΗΡΑΣ","ΣΥΜΒΟΛΟΣΕΙΡΑ","ALGORITHM","CONSTANTS","DATA","BEGIN","END","IF","THEN","ELSE","END_IF","FOR","TO","STEP","REPEAT","END_FOR","WHILE","END_WHILE","UNTIL","PRINT","READ","CALCULATE","PROCEDURE","END_PROCEDURE","FUNCTION","END_FUNCTION","RETURN","INTEGER","REAL","BOOLEAN","CHAR","STRING"];
 
-                // 1. Check Keywords
-                // Must be at boundary
+                // 1. Check Keywords (must be at boundary)
                 if (isBoundary(i - 1)) {
                     for (const kw of keywords) {
+                        // Check if text starts with keyword at current position
                         if (text.substr(i, kw.length).toUpperCase() === kw && isBoundary(i + kw.length)) {
-                            // Match found
                              if (!match || kw.length > matchLength) {
-                                matchText = text.substr(i, kw.length); // Preserve case
+                                matchText = text.substr(i, kw.length);
                                 matchLength = kw.length;
                                 matchType = 'token-keyword';
                                 match = true;
@@ -464,13 +391,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     const applyTheme = (isDark) => {
         const theme = isDark ? 'dark' : 'light';
-        // Set on documentElement to match inline script logic
         document.documentElement.setAttribute('data-theme', theme);
-        // Also set on body just in case, but html is preferred for variables
         document.body.setAttribute('data-theme', theme);
 
         themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
         SettingsManager.set('theme', theme);
+
+        // Update URL to reflect state (clean history)
+        const url = new URL(window.location);
+        url.searchParams.set('theme', theme);
+        window.history.replaceState({}, '', url);
 
         // Update Home Link to pass theme state via URL (Reverse Sync)
         const homeLink = document.querySelector('.home-link');

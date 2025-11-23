@@ -11,16 +11,25 @@
         (function() {
             let savedTheme = 'light';
             try {
-                // Check URL params first (fallback for file:// or cross-origin issues)
                 const params = new URLSearchParams(window.location.search);
                 const urlTheme = params.get('theme');
+                const localTheme = localStorage.getItem('theme');
 
-                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light')) {
+                // Check if navigation is Back/Forward
+                let isBackForward = false;
+                if (window.performance && window.performance.getEntriesByType) {
+                    const nav = window.performance.getEntriesByType('navigation');
+                    if (nav.length > 0 && nav[0].type === 'back_forward') {
+                        isBackForward = true;
+                    }
+                }
+
+                // If URL param exists and valid, use it, UNLESS it's a back/forward nav
+                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light') && !isBackForward) {
                     savedTheme = urlTheme;
-                    // Persist it if possible
                     localStorage.setItem('theme', savedTheme);
                 } else {
-                    savedTheme = localStorage.getItem('theme') || 'light';
+                    savedTheme = localTheme || 'light';
                 }
             } catch (e) {
                 console.warn('Theme access error:', e);
@@ -28,6 +37,15 @@
 
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
+
+        // Handle BFCache (Back/Forward Cache)
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                const theme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                // Trigger theme update in UI if needed (handled by main script usually)
+            }
+        });
     </script>
     <style>
         /* Landing Page Specific Overrides */
@@ -183,21 +201,13 @@
         // Simple Theme Logic for Landing Page
         const themeToggle = document.getElementById('theme-toggle-landing');
 
-        // Initialize from current state (set by inline script) or storage
-        let storedTheme = 'light';
-        try {
-            storedTheme = localStorage.getItem('theme') || 'light';
-        } catch (e) {
-            console.warn('LocalStorage access failed:', e);
-        }
-
-        const currentTheme = document.documentElement.getAttribute('data-theme') || storedTheme;
-        let isDarkMode = currentTheme === 'dark';
+        // Initialize from current state
+        let isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
 
         const applyTheme = () => {
             const theme = isDarkMode ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', theme);
-            document.body.setAttribute('data-theme', theme); // consistency
+            document.body.setAttribute('data-theme', theme);
             themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
 
             try {
@@ -206,10 +216,14 @@
                 console.warn('LocalStorage write failed:', e);
             }
 
-            // Update Link to pass theme state via URL (fallback for file:// protocol)
+            // Update URL to reflect state (clean history)
+            const url = new URL(window.location);
+            url.searchParams.set('theme', theme);
+            window.history.replaceState({}, '', url);
+
+            // Update Link to pass theme state via URL
             const link = document.querySelector('.btn-primary');
             if (link) {
-                // Ensure we keep the base file correct
                 link.href = `editor.html?theme=${theme}`;
             }
         };
@@ -225,7 +239,7 @@
         // Initial Link Update
         const link = document.querySelector('.btn-primary');
         if (link) {
-            link.href = `editor.html?theme=${currentTheme === 'dark' ? 'dark' : 'light'}`;
+            link.href = `editor.html?theme=${isDarkMode ? 'dark' : 'light'}`;
         }
     </script>
 
