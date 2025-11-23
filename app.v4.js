@@ -331,11 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
         line.className = `term-${type}`;
         terminalOutput.appendChild(line);
 
-        // Auto-grow output container if content is large (only on desktop)
-        if (window.innerWidth > 800 && terminalOutput.children.length > 5) {
-             outputContainer.classList.add('expanded');
-        }
-
         // Scroll the window container, not the output div
         scrollToBottom();
     };
@@ -343,26 +338,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrollToBottom = () => {
         const terminalWindow = document.getElementById('terminal-window');
         if (terminalWindow) {
-            terminalWindow.scrollTop = terminalWindow.scrollHeight;
+            // Use setTimeout to ensure DOM update is complete before scrolling
+            setTimeout(() => {
+                terminalWindow.scrollTop = terminalWindow.scrollHeight;
+            }, 0);
         }
     };
 
     const clearTerminal = () => {
         terminalOutput.innerHTML = '';
         terminalInputLine.style.display = 'none';
-        outputContainer.classList.remove('expanded');
     };
-
-    // Allow toggle by clicking header
-    const outputHeader = outputContainer.querySelector('.panel-header');
-    if(outputHeader) {
-        outputHeader.addEventListener('click', () => {
-            if (window.innerWidth > 800) {
-                outputContainer.classList.toggle('expanded');
-            }
-        });
-        outputHeader.title = "Click to expand/collapse";
-    }
 
     // Async Input Provider
     const inputProvider = (promptMsg) => {

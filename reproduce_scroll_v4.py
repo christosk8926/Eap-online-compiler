@@ -52,7 +52,20 @@ def run():
         else:
             print("Failure: NOT scrolled to bottom.")
 
-        page.screenshot(path="/home/jules/verification/scroll_issue_v4.png")
+        # Verify terminal didn't expand
+        # In v3, we had auto-expand. In v4, we removed it.
+        # We need to check if the height is 25vh (approx) or 50vh.
+        # Or check if 'expanded' class is absent.
+        has_expanded = page.evaluate("""() => {
+            return document.querySelector('.output-container').classList.contains('expanded');
+        }""")
+
+        if has_expanded:
+             print("Failure: Terminal expanded.")
+        else:
+             print("Success: Terminal did NOT expand.")
+
+        page.screenshot(path="/home/jules/verification/scroll_issue_v4_check.png")
         browser.close()
 
 if __name__ == "__main__":
