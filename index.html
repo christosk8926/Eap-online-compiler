@@ -11,7 +11,8 @@
         (function() {
             let savedTheme = 'light';
             try {
-                savedTheme = localStorage.getItem('theme') || 'light';
+                const params = new URLSearchParams(window.location.search);
+                savedTheme = params.get('theme') || localStorage.getItem('theme') || 'light';
             } catch (e) {
                 console.warn('Theme access error:', e);
             }
@@ -197,6 +198,17 @@
             } catch (e) {
                 console.warn('LocalStorage write failed:', e);
             }
+
+            // Update Link to pass theme state via URL
+            const link = document.querySelector('.btn-primary');
+            if (link) {
+                link.href = `editor.html?theme=${theme}`;
+            }
+
+            // Update current URL for history consistency
+            const url = new URL(window.location);
+            url.searchParams.set('theme', theme);
+            window.history.replaceState({}, '', url);
         };
 
         themeToggle.addEventListener('click', () => {
@@ -204,8 +216,9 @@
             applyTheme();
         });
 
-        // Update button text initially
+        // Update button text and link initially
         themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+        applyTheme();
     </script>
 
 </body>

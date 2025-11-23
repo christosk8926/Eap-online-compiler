@@ -396,9 +396,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
         SettingsManager.set('theme', theme);
+
+        // Update URL to reflect state (clean history)
+        const url = new URL(window.location);
+        url.searchParams.set('theme', theme);
+        window.history.replaceState({}, '', url);
+
+        // Update Home Link to pass theme state via URL (Reverse Sync)
+        const homeLink = document.querySelector('.home-link');
+        if (homeLink) {
+            homeLink.href = `index.html?theme=${theme}`;
+        }
     };
 
     // Initialize from current state (set by inline script) or storage
+    // We prioritize the data-theme set by the inline script (which handled URL param priority)
     const currentTheme = document.documentElement.getAttribute('data-theme') || SettingsManager.get('theme', 'light');
     let isDarkMode = currentTheme === 'dark';
 

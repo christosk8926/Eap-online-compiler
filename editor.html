@@ -11,7 +11,8 @@
         (function() {
             let savedTheme = 'light';
             try {
-                savedTheme = localStorage.getItem('theme') || 'light';
+                const params = new URLSearchParams(window.location.search);
+                savedTheme = params.get('theme') || localStorage.getItem('theme') || 'light';
             } catch (e) {
                 console.warn('Theme access error:', e);
             }
