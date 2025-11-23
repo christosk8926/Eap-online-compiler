@@ -329,11 +329,16 @@ document.addEventListener('DOMContentLoaded', () => {
         line.textContent = text;
         line.className = `term-${type}`;
         terminalOutput.appendChild(line);
-        terminalOutput.scrollTop = terminalOutput.scrollHeight;
 
         // Auto-grow output container if content is large (only on desktop)
         if (window.innerWidth > 800 && terminalOutput.children.length > 5) {
              outputContainer.classList.add('expanded');
+        }
+
+        // Scroll the window container, not the output div
+        const terminalWindow = document.getElementById('terminal-window');
+        if (terminalWindow) {
+            terminalWindow.scrollTop = terminalWindow.scrollHeight;
         }
     };
 

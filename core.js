@@ -116,7 +116,12 @@ class Parser {
     peek() { return this.tokens[this.current]; }
     previous() { return this.tokens[this.current - 1]; }
     advance() { if (!this.isAtEnd()) this.current++; return this.previous(); }
-    consume(type, message) { if (this.check(type)) return this.advance(); const token = this.peek(); throw new Error(message || `Expected token of type ${type} but got ${token.type} ('${token.value}') at line ${token.line}, column ${token.column}`); }
+    consume(type, message) {
+        if (this.check(type)) return this.advance();
+        const token = this.peek();
+        const locationInfo = `at line ${token.line}, column ${token.column}`;
+        throw new Error(message ? `${message} (${locationInfo})` : `Expected token of type ${type} but got ${token.type} ('${token.value}') ${locationInfo}`);
+    }
     check(type) { if (this.isAtEnd()) return false; return this.peek().type === type; }
     match(...types) { for (const type of types) { if (this.check(type)) { this.advance(); return true; } } return false; }
     parse() { return this.parseProgram(); }
