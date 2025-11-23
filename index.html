@@ -185,15 +185,18 @@
         const compilerLink = document.getElementById('compiler-link');
 
         // Initialize from current state (set by inline script) or storage
-        let storedTheme = 'light';
-        try {
-            storedTheme = localStorage.getItem('theme') || 'light';
-        } catch (e) {
-            console.warn('LocalStorage access failed:', e);
-        }
+        const getStoredTheme = () => {
+             try {
+                return localStorage.getItem('theme') || 'light';
+            } catch (e) {
+                console.warn('LocalStorage access failed:', e);
+                return 'light';
+            }
+        };
 
-        const currentTheme = document.documentElement.getAttribute('data-theme') || storedTheme;
-        let isDarkMode = currentTheme === 'dark';
+        const getCurrentTheme = () => document.documentElement.getAttribute('data-theme') || getStoredTheme();
+
+        let isDarkMode = getCurrentTheme() === 'dark';
 
         const applyTheme = () => {
             const theme = isDarkMode ? 'dark' : 'light';
@@ -223,8 +226,22 @@
 
         // Initial Link Update
         if (compilerLink) {
-            compilerLink.href = `editor.html?theme=${currentTheme === 'dark' ? 'dark' : 'light'}`;
+            compilerLink.href = `editor.html?theme=${getCurrentTheme() === 'dark' ? 'dark' : 'light'}`;
         }
+
+        // BFCache / History Back Handling
+        window.addEventListener('pageshow', (event) => {
+             // If navigating back, localStorage might have changed in the other page.
+             // We should re-sync.
+             const stored = getStoredTheme();
+             // However, checking localStorage strictly might override the user's intent if they just navigated back
+             // from a page where they DIDN'T change the theme but maybe the inline script ran?
+             // Actually, if they changed it in Editor, we want Index to reflect it.
+             if (stored !== getCurrentTheme()) {
+                 isDarkMode = stored === 'dark';
+                 applyTheme();
+             }
+        });
     </script>
 
 </body>

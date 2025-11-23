@@ -480,8 +480,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Initialize from current state (set by inline script) or storage
-    const currentTheme = document.documentElement.getAttribute('data-theme') || SettingsManager.get('theme', 'light');
-    let isDarkMode = currentTheme === 'dark';
+    const getCurrentTheme = () => document.documentElement.getAttribute('data-theme') || SettingsManager.get('theme', 'light');
+    let isDarkMode = getCurrentTheme() === 'dark';
 
     // Update UI to match
     applyTheme(isDarkMode);
@@ -489,6 +489,16 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggle.addEventListener('click', () => {
         isDarkMode = !isDarkMode;
         applyTheme(isDarkMode);
+    });
+
+    // BFCache / History Back Handling
+    window.addEventListener('pageshow', (event) => {
+        const stored = SettingsManager.get('theme', 'light');
+        const current = getCurrentTheme();
+        if (stored !== current) {
+            isDarkMode = stored === 'dark';
+            applyTheme(isDarkMode);
+        }
     });
 
     // -----------------------------------
