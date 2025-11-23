@@ -471,6 +471,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
         SettingsManager.set('theme', theme);
+
+        // Update Home Link to pass theme state via URL (Reverse Sync)
+        const homeLink = document.querySelector('.home-link');
+        if (homeLink) {
+            homeLink.href = `index.html?theme=${theme}`;
+        }
     };
 
     // Initialize from current state (set by inline script) or storage

@@ -9,7 +9,23 @@
     <script>
         // Inline script to prevent FOUC
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            let savedTheme = 'light';
+            try {
+                // Check URL params first (fallback for file:// or cross-origin issues)
+                const params = new URLSearchParams(window.location.search);
+                const urlTheme = params.get('theme');
+
+                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light')) {
+                    savedTheme = urlTheme;
+                    // Persist it if possible
+                    localStorage.setItem('theme', savedTheme);
+                } else {
+                    savedTheme = localStorage.getItem('theme') || 'light';
+                }
+            } catch (e) {
+                console.warn('Theme access error:', e);
+            }
+
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
@@ -176,7 +192,12 @@
             document.documentElement.setAttribute('data-theme', theme);
             document.body.setAttribute('data-theme', theme); // consistency
             themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
-            localStorage.setItem('theme', theme);
+
+            try {
+                localStorage.setItem('theme', theme);
+            } catch (e) {
+                console.warn('LocalStorage write failed:', e);
+            }
 
             // Update Link to pass theme state via URL (fallback for file:// protocol)
             const link = document.querySelector('.btn-primary');
