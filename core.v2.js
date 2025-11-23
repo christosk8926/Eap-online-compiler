@@ -120,16 +120,16 @@ class Parser {
     // Helper to throw error with location info
     error(message, token) {
         token = token || this.peek();
-        const locationInfo = `at line ${token.line}, column ${token.column}`;
-        throw new Error(message ? `${message} (${locationInfo})` : `Error ${locationInfo}`);
+        const locationInfo = `[Line: ${token.line}, Col: ${token.column}]`;
+        throw new Error(message ? `${message} ${locationInfo}` : `Error ${locationInfo}`);
     }
 
     consume(type, message) {
         if (this.check(type)) return this.advance();
         const token = this.peek();
-        const locationInfo = `at line ${token.line}, column ${token.column}`;
+        const locationInfo = `[Line: ${token.line}, Col: ${token.column}]`;
         // Standardize consume error message
-        throw new Error(message ? `${message} (${locationInfo})` : `Expected token of type ${type} but got ${token.type} ('${token.value}') ${locationInfo}`);
+        throw new Error(message ? `${message} ${locationInfo}` : `Expected token of type ${type} but got ${token.type} ('${token.value}') ${locationInfo}`);
     }
 
     check(type) { if (this.isAtEnd()) return false; return this.peek().type === type; }
@@ -528,8 +528,9 @@ class Interpreter {
         } catch (e) {
             // Add location info if available and not present
             let msg = e.message;
-            if (this.currentNode && this.currentNode.loc && !msg.includes('at line')) {
-                msg = `${msg} (at line ${this.currentNode.loc.line}, column ${this.currentNode.loc.column})`;
+            // Check for new format [Line: ...]
+            if (this.currentNode && this.currentNode.loc && !msg.includes('[Line:')) {
+                msg = `${msg} [Line: ${this.currentNode.loc.line}, Col: ${this.currentNode.loc.column}]`;
             }
             return { output: this.outputBuffer.join('\n'), error: msg };
         }

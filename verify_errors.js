@@ -13,8 +13,8 @@ async function testParsingError() {
         parser.parse();
     } catch (e) {
         console.log("Caught Error:", e.message);
-        if (!e.message.includes("at line 4")) {
-             throw new Error("Parsing error missing line number!");
+        if (!e.message.includes("[Line: 4")) {
+             throw new Error("Parsing error missing line number or wrong format!");
         }
     }
 }
@@ -37,8 +37,8 @@ async function testRuntimeError() {
         const result = await interpreter.interpret(ast);
         if (result.error) {
             console.log("Caught Error:", result.error);
-             if (!result.error.includes("at line 6")) {
-                 throw new Error("Runtime error missing line number!");
+             if (!result.error.includes("[Line: 6")) {
+                 throw new Error("Runtime error missing line number or wrong format!");
             }
         } else {
             console.log("No error occurred (unexpected)!");

@@ -314,7 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const highlightErrorLine = (errorMsg) => {
-        const match = errorMsg.match(/line (\d+)/);
+        // Updated regex to support both "line X" (old) and "Line: X" (new)
+        const match = errorMsg.match(/Line:? (\d+)/i) || errorMsg.match(/line (\d+)/);
         if (match) {
             const line = parseInt(match[1]);
             const lineElement = lineNumbers.children[line - 1];
@@ -406,14 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await interpreter.interpret(ast);
 
             if (result.error) {
-                 printToTerminal(`\nRuntime Error: ${result.error}`, 'error');
+                 printToTerminal(`\nExecution Error: ${result.error}`, 'error');
                  highlightErrorLine(result.error);
             } else {
                  printToTerminal('\nExecution finished.', 'success');
             }
 
         } catch (error) {
-            printToTerminal(`\nParsing Error: ${error.message}`, 'error');
+            printToTerminal(`\nCompilation Error: ${error.message}`, 'error');
             highlightErrorLine(error.message);
             console.error(error);
         }
