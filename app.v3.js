@@ -337,6 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Scroll the window container, not the output div
+        scrollToBottom();
+    };
+
+    const scrollToBottom = () => {
         const terminalWindow = document.getElementById('terminal-window');
         if (terminalWindow) {
             terminalWindow.scrollTop = terminalWindow.scrollHeight;
@@ -365,6 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => {
             printToTerminal(promptMsg, 'info');
             terminalInputLine.style.display = 'flex';
+            // Scroll again because displaying the input line changes scrollHeight
+            scrollToBottom();
             terminalInput.value = '';
             terminalInput.focus();
 

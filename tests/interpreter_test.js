@@ -1,5 +1,5 @@
 
-const { tokenize, Parser, Interpreter, Environment } = require('../core.v2.js');
+const { tokenize, Parser, Interpreter, Environment } = require('../core.v3.js');
 const assert = require('assert');
 
 // Helper to run code and check output
