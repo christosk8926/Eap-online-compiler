@@ -159,7 +159,7 @@
         </p>
 
         <div class="actions">
-            <a href="editor.html" class="btn-large btn-primary">Άνοιγμα Compiler</a>
+            <a id="compiler-link" href="editor.html" class="btn-large btn-primary">Άνοιγμα Compiler</a>
             <a href="https://github.com/christosk8926/Eap-online-compiler.git" target="_blank" class="btn-large btn-secondary">GitHub Repo</a>
         </div>
 
@@ -182,6 +182,7 @@
     <script>
         // Simple Theme Logic for Landing Page
         const themeToggle = document.getElementById('theme-toggle-landing');
+        const compilerLink = document.getElementById('compiler-link');
 
         // Initialize from current state (set by inline script) or storage
         let storedTheme = 'light';
@@ -207,10 +208,8 @@
             }
 
             // Update Link to pass theme state via URL (fallback for file:// protocol)
-            const link = document.querySelector('.btn-primary');
-            if (link) {
-                // Ensure we keep the base file correct
-                link.href = `editor.html?theme=${theme}`;
+            if (compilerLink) {
+                compilerLink.href = `editor.html?theme=${theme}`;
             }
         };
 
@@ -223,9 +222,8 @@
         themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
 
         // Initial Link Update
-        const link = document.querySelector('.btn-primary');
-        if (link) {
-            link.href = `editor.html?theme=${currentTheme === 'dark' ? 'dark' : 'light'}`;
+        if (compilerLink) {
+            compilerLink.href = `editor.html?theme=${currentTheme === 'dark' ? 'dark' : 'light'}`;
         }
     </script>
 

@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         SettingsManager.set('theme', theme);
 
         // Update Home Link to pass theme state via URL (Reverse Sync)
-        const homeLink = document.querySelector('.home-link');
+        const homeLink = document.getElementById('home-link');
         if (homeLink) {
             homeLink.href = `index.html?theme=${theme}`;
         }
