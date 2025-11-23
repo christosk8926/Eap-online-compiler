@@ -11,39 +11,21 @@
         (function() {
             let savedTheme = 'light';
             try {
-                const params = new URLSearchParams(window.location.search);
-                const urlTheme = params.get('theme');
-                const localTheme = localStorage.getItem('theme');
-
-                // Check if navigation is Back/Forward
-                let isBackForward = false;
-                if (window.performance && window.performance.getEntriesByType) {
-                    const nav = window.performance.getEntriesByType('navigation');
-                    if (nav.length > 0 && nav[0].type === 'back_forward') {
-                        isBackForward = true;
-                    }
-                }
-
-                // If URL param exists and valid, use it, UNLESS it's a back/forward nav
-                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light') && !isBackForward) {
-                    savedTheme = urlTheme;
-                    localStorage.setItem('theme', savedTheme);
-                } else {
-                    savedTheme = localTheme || 'light';
-                }
+                savedTheme = localStorage.getItem('theme') || 'light';
             } catch (e) {
                 console.warn('Theme access error:', e);
             }
-
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
 
         // Handle BFCache (Back/Forward Cache)
         window.addEventListener('pageshow', (event) => {
-            if (event.persisted) {
+            // Always re-check storage on page show, whether persisted or not, to ensure consistency
+            try {
                 const theme = localStorage.getItem('theme') || 'light';
                 document.documentElement.setAttribute('data-theme', theme);
-                // Trigger theme update in UI if needed (handled by main script usually)
+            } catch (e) {
+                console.warn('Theme access error:', e);
             }
         });
     </script>
@@ -215,17 +197,6 @@
             } catch (e) {
                 console.warn('LocalStorage write failed:', e);
             }
-
-            // Update URL to reflect state (clean history)
-            const url = new URL(window.location);
-            url.searchParams.set('theme', theme);
-            window.history.replaceState({}, '', url);
-
-            // Update Link to pass theme state via URL
-            const link = document.querySelector('.btn-primary');
-            if (link) {
-                link.href = `editor.html?theme=${theme}`;
-            }
         };
 
         themeToggle.addEventListener('click', () => {
@@ -235,12 +206,6 @@
 
         // Update button text initially
         themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
-
-        // Initial Link Update
-        const link = document.querySelector('.btn-primary');
-        if (link) {
-            link.href = `editor.html?theme=${isDarkMode ? 'dark' : 'light'}`;
-        }
     </script>
 
 </body>

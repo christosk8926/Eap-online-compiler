@@ -11,37 +11,21 @@
         (function() {
             let savedTheme = 'light';
             try {
-                const params = new URLSearchParams(window.location.search);
-                const urlTheme = params.get('theme');
-                const localTheme = localStorage.getItem('theme');
-
-                // Check if navigation is Back/Forward
-                let isBackForward = false;
-                if (window.performance && window.performance.getEntriesByType) {
-                    const nav = window.performance.getEntriesByType('navigation');
-                    if (nav.length > 0 && nav[0].type === 'back_forward') {
-                        isBackForward = true;
-                    }
-                }
-
-                if (urlTheme && (urlTheme === 'dark' || urlTheme === 'light') && !isBackForward) {
-                    savedTheme = urlTheme;
-                    localStorage.setItem('theme', savedTheme);
-                } else {
-                    savedTheme = localTheme || 'light';
-                }
+                savedTheme = localStorage.getItem('theme') || 'light';
             } catch (e) {
                 console.warn('Theme access error:', e);
             }
-
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
 
         // Handle BFCache
         window.addEventListener('pageshow', (event) => {
-             if (event.persisted) {
+             // Always update from storage to sync state (even if not strictly persisted)
+             try {
                  const theme = localStorage.getItem('theme') || 'light';
                  document.documentElement.setAttribute('data-theme', theme);
+             } catch (e) {
+                 console.warn('Theme access error:', e);
              }
         });
     </script>
