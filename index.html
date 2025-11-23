@@ -177,6 +177,13 @@
             document.body.setAttribute('data-theme', theme); // consistency
             themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
             localStorage.setItem('theme', theme);
+
+            // Update Link to pass theme state via URL (fallback for file:// protocol)
+            const link = document.querySelector('.btn-primary');
+            if (link) {
+                // Ensure we keep the base file correct
+                link.href = `editor.html?theme=${theme}`;
+            }
         };
 
         themeToggle.addEventListener('click', () => {
@@ -186,6 +193,12 @@
 
         // Update button text initially
         themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+        // Initial Link Update
+        const link = document.querySelector('.btn-primary');
+        if (link) {
+            link.href = `editor.html?theme=${currentTheme === 'dark' ? 'dark' : 'light'}`;
+        }
     </script>
 
 </body>

@@ -96,11 +96,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------
     const SettingsManager = {
         get: (key, defaultValue) => {
-            const val = localStorage.getItem(key);
-            return val !== null ? val : defaultValue;
+            try {
+                const val = localStorage.getItem(key);
+                return val !== null ? val : defaultValue;
+            } catch (e) {
+                console.warn('LocalStorage access failed:', e);
+                return defaultValue;
+            }
         },
         set: (key, value) => {
-            localStorage.setItem(key, value);
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                console.warn('LocalStorage write failed:', e);
+            }
         }
     };
 
