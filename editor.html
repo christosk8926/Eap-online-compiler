@@ -6,6 +6,40 @@
     <title>EAP Pseudocode Interpreter</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Inline script to prevent FOUC (Flash of Unstyled Content) / wrong theme
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme); // Set on html/root if possible or body
+            // Since body might not exist yet in head, set on documentElement usually works for CSS vars if :root uses them
+            // But my CSS uses [data-theme] on body?
+            // Let's check style.css.
+            // [data-theme="dark"] matches body.
+            // If I set it on document.documentElement (html), does it inherit?
+            // If CSS is [data-theme="dark"] { ... }, it matches whatever element has it.
+            // If vars are defined in :root, and overwritten in [data-theme="dark"],
+            // putting it on <html> is better.
+
+            // Wait, style.css:
+            // [data-theme="dark"] { ... variables ... }
+            // body { ... background-color: var(--bg-color); ... }
+
+            // If I put data-theme on <html>, the variables will apply to <html> and inherit to <body>.
+            // This is standard.
+            // But I need to ensure `app.v5.js` and `index.html` use the same element.
+            // `index.html` sets it on `body`.
+            // `app.v5.js` sets it on `body`.
+
+            // I should probably stick to `body` but since `body` isn't parsed yet...
+            // I can wait for DOMContentLoaded? No, that defeats the purpose.
+            // I can try `document.documentElement` and update CSS to match `:root[data-theme="dark"]` OR `[data-theme="dark"]`.
+            // Actually, `[data-theme="dark"]` matches html tag too.
+            // So variables will be set on html. Body inherits variables.
+            // So setting on documentElement is safer in head.
+
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
 <body>
     <header>

@@ -454,12 +454,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // DARK MODE
     // -----------------------------------
     const applyTheme = (isDark) => {
-        document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        const theme = isDark ? 'dark' : 'light';
+        // Set on documentElement to match inline script logic
+        document.documentElement.setAttribute('data-theme', theme);
+        // Also set on body just in case, but html is preferred for variables
+        document.body.setAttribute('data-theme', theme);
+
         themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
-        SettingsManager.set('theme', isDark ? 'dark' : 'light');
+        SettingsManager.set('theme', theme);
     };
 
-    let isDarkMode = SettingsManager.get('theme', 'light') === 'dark';
+    // Initialize from current state (set by inline script) or storage
+    const currentTheme = document.documentElement.getAttribute('data-theme') || SettingsManager.get('theme', 'light');
+    let isDarkMode = currentTheme === 'dark';
+
+    // Update UI to match
     applyTheme(isDarkMode);
 
     themeToggle.addEventListener('click', () => {

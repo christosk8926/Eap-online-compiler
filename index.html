@@ -6,6 +6,13 @@
     <title>Ψευδογλώσσα Interpreter - Landing</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Inline script to prevent FOUC
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     <style>
         /* Landing Page Specific Overrides */
         body {
@@ -159,12 +166,17 @@
     <script>
         // Simple Theme Logic for Landing Page
         const themeToggle = document.getElementById('theme-toggle-landing');
-        let isDarkMode = localStorage.getItem('theme') === 'dark';
+
+        // Initialize from current state (set by inline script) or storage
+        const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
+        let isDarkMode = currentTheme === 'dark';
 
         const applyTheme = () => {
-            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            const theme = isDarkMode ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.setAttribute('data-theme', theme); // consistency
             themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
-            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            localStorage.setItem('theme', theme);
         };
 
         themeToggle.addEventListener('click', () => {
@@ -172,8 +184,8 @@
             applyTheme();
         });
 
-        // Apply initial theme
-        applyTheme();
+        // Update button text initially
+        themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
     </script>
 
 </body>
