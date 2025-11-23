@@ -184,7 +184,14 @@
         const themeToggle = document.getElementById('theme-toggle-landing');
 
         // Initialize from current state (set by inline script) or storage
-        const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
+        let storedTheme = 'light';
+        try {
+            storedTheme = localStorage.getItem('theme') || 'light';
+        } catch (e) {
+            console.warn('LocalStorage access failed:', e);
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-theme') || storedTheme;
         let isDarkMode = currentTheme === 'dark';
 
         const applyTheme = () => {
